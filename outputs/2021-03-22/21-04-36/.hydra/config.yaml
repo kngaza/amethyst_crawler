@@ -1,0 +1,7 @@
+URL_STOCK_EOD: https://histdatafeed.vps.com.vn/tradingview/history?symbol={}&resolution=1D&from={}}&to={}
+URL_GET_STOCK: https://bgapidatafeed.vps.com.vn/getlistckindex/
+URL_STOCK_TRADE: https://bgapidatafeed.vps.com.vn/getliststocktrade/
+LIST_STOCK_EXCHANGE:
+- hose
+- vn30
+- upcom

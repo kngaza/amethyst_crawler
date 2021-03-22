@@ -1,0 +1,16 @@
+# Danh sách sàn
+LIST_STOCK_EXCHANGE: ['hose', 'vn30', 'upcom']
+
+# API lấy danh sách stock
+URL_GET_STOCK: "https://bgapidatafeed.vps.com.vn/getlistckindex/"
+
+# API lấy dữ liệu cuối ngày
+URL_STOCK_EOD: "https://histdatafeed.vps.com.vn/tradingview/history?symbol={}&resolution=1D&from={}&to={}"
+
+# API lấy dữ liệu theo từng lệnh khớp
+URL_STOCK_TRADE: "https://bgapidatafeed.vps.com.vn/getliststocktrade/"
+
+#
+DATABASE:
+  eod: "dbo.Daily"
+  deal: "dbo.Stock_trade"
