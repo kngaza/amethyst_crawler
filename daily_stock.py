@@ -9,10 +9,14 @@ import requests
 from typing import List
 
 from utils import logger
+from transform import transformer_for_daily_stock
+from model import loadSession, init_model_daily
 
 logging.basicConfig(filename='dailylogging.log', level=os.environ.get("LOGLEVEL", "INFO"))
+
 # API lấy dữ liệu cuối ngày
 URL_STOCK_EOD: "https://histdatafeed.vps.com.vn/tradingview/history?symbol={}&resolution=1D&from={}&to={}"
+Daily = init_model_daily()
 
 def get_daily_stock(stocks: List, _from: int = None) -> None:
     """Lấy dữ liệu cuối ngày và cập nhật vào CSDL.
@@ -37,10 +41,11 @@ def get_daily_stock(stocks: List, _from: int = None) -> None:
         r = requests.get(URL_STOCK_EOD.format(stock, _from, _to))
         raw = eval(r.text)
         if raw["s"] == "ok":
-            # Check giá trị -> update
-
-            # insert
-            pass
+            inserted_data = transformer_for_daily_stock(stock, raw)
+            with loadSession() as session:
+                session.bulk_insert_mappings(Daily, inserted_data, return_defaults=True)
+                session.commit()
+            logging.info(f"Cập nhật dữ liệu cho {stock} ngày {_to}")
         else:
             date_to_str = date.fromtimestamp(_to).strftime("%Y/%m/%d")
             logging.warning(f"Dữ liệu cuối ngày {date_to_str} của {stock} không tồn tại")
