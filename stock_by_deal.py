@@ -2,23 +2,26 @@ import os
 import json
 import logging
 
+import schedule
 import requests
-import hydra
 from typing import List
 
 from model import loadSession, Daily, StockByDeal
 
+# API lấy dữ liệu theo từng lệnh khớp
+URL_STOCK_TRADE: "https://bgapidatafeed.vps.com.vn/getliststocktrade/"
 
-@hydra.main(config_name="config.yaml")
-def get_stock_by_deal(stocks: List, cfg):
-    """
+def get_stock_by_deal(stocks: List):
+    """Lấy dữ liệu theo từng lệnh khớp.
+    Dữ liệu được lấy về theo dạng stack nên cần so sánh giá trị sID nếu mới hơn thì tiến hành insert.
+    Định kỳ chạy 30s/lần
     """
     def get_latest_sid(stock):
         with loadSession() as session:
             rs = session.query(StockByDeal.sid).filter(StockByDeal.sym == stock).order_by(StockByDeal.trading_date).limit(1)
         return rs if rs else 0
     for stock in stocks:
-        r = requests.get(cfg.URL_STOCK_TRADE + stock)
+        r = requests.get(URL_STOCK_TRADE + stock)
         raw = eval(r.text)
         latest_sid = get_latest_sid(stock)
         updated_data = next(row for row in raw if int(row["sID"] > latest_sid))
@@ -33,4 +36,7 @@ def get_stock_by_deal(stocks: List, cfg):
 if __name__ == "__main__":
     with open("stock.json", "r") as f:
         stocks = json.load(f)
-    get_stock_by_deal(stocks)
+    schedule.every(30).seconds.do(get_stock_by_deal, stocks=stocks)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
