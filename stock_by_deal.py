@@ -1,15 +1,19 @@
 import os
 import json
 import logging
+import time
 
 import schedule
 import requests
 from typing import List
 
-from model import loadSession, Daily, StockByDeal
+from model import loadSession, init_model_stockByDeal
+
+logging.basicConfig(filename='bydeallogging.log', level=os.environ.get("LOGLEVEL", "INFO"))
 
 # API lấy dữ liệu theo từng lệnh khớp
 URL_STOCK_TRADE: "https://bgapidatafeed.vps.com.vn/getliststocktrade/"
+StockByDeal = init_model_stockByDeal()
 
 def get_stock_by_deal(stocks: List):
     """Lấy dữ liệu theo từng lệnh khớp.
@@ -18,7 +22,7 @@ def get_stock_by_deal(stocks: List):
     """
     def get_latest_sid(stock):
         with loadSession() as session:
-            rs = session.query(StockByDeal.sid).filter(StockByDeal.sym == stock).order_by(StockByDeal.trading_date).limit(1)
+            rs = session.query(StockByDeal.sid).filter(StockByDeal.sym == stock).order_by(StockByDeal.trading_date).limit(1).all()
         return rs if rs else 0
     for stock in stocks:
         r = requests.get(URL_STOCK_TRADE + stock)
@@ -28,8 +32,9 @@ def get_stock_by_deal(stocks: List):
         updated_index = raw.index(updated_data)
         if updated_index:
             with loadSession() as session:
-                session.execute(Daily.insert(), raw[updated_data])
+                session.execute(StockByDeal.insert(), raw[updated_data])
                 session.commit()
+            logging.info(f"Update for {stock}")
         else:
             continue
 
